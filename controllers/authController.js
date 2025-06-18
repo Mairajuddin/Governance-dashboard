@@ -8,7 +8,7 @@ import ejs from "ejs";
 import fs from "fs";
 
 import { encryptPassword, generateOTP, sendEmail } from "../services/common_utils.js";
-import { readSingleUser, updateSingleUser } from "../db/db.js";
+import { readSingle, updateSingleUser } from "../db/db.js";
 const JWT_SECRET = process.env.JWT_SECRET; // Make sure it's in your .env
 // -----------------------------REGISTER-------------------------------------
 export const registerUser=async(req,res)=>{
@@ -50,18 +50,20 @@ export const loginUser = async (req, res) => {
     }
 
     const user = await USER.findOne({ email });
-
+console.log(user, 'user')
     if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid email or password.' });
     }
 
+    if(user.is_active === false) {
+      return res.status(403).json({ success: false, message: 'Your account is deactivated. Please contact support.' });
+    }
     const isMatch = await bcrypt.compare(password, user.password);
-
+console.log(isMatch, 'isMatch')
     if (!isMatch) {
       return res.status(401).json({ success: false, message: 'Invalid email or password.' });
     }
 
-    // ✅ Create JWT Token
     const tokenPayload = {
       _id: user._id,
       email: user.email,
@@ -70,7 +72,7 @@ export const loginUser = async (req, res) => {
 
     const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '7d' }); // you can adjust expiry
 
-    // ✅ Remove password before sending response
+    
     const { password: pwd, ...userWithoutPassword } = user.toObject();
 
     res.status(200).json({
@@ -99,7 +101,7 @@ export const forgetPassword = async (req, res) => {
       });
     }
 
-    const user = await readSingleUser(USER, { email });
+    const user = await readSingle(USER, { email });
 
     if (user) {
       const __filename = fileURLToPath(import.meta.url);
@@ -151,7 +153,7 @@ export const verifyOtp = async (req, res) => {
       });
     }
 
-    const user = await readSingleUser(USER, { email });
+    const user = await readSingle(USER, { email });
 
     if (!user) {
       return res.status(404).json({
@@ -195,7 +197,7 @@ export const resetPassword = async (req, res) => {
       });
     }
 
-    const user = await readSingleUser(USER, { email });
+    const user = await readSingle(USER, { email });
 
     if (!user) {
       return res.status(404).json({
@@ -221,3 +223,4 @@ export const resetPassword = async (req, res) => {
     });
   }
 };
+

@@ -1,6 +1,6 @@
 import { compare, genSalt, hashSync } from "bcrypt";
 import jwt from "jsonwebtoken";
-import {  readSingleUser, registerSingle } from "../db/db.js";
+import {  readSingle, registerSingle } from "../db/db.js";
 import USER from "../Models/UserSchema.js";
 import nodemailer from "nodemailer";
 import dotenv from 'dotenv';
@@ -39,7 +39,7 @@ export const createSuperAdmin = async () => {
       password: await encryptPassword(SUPER_ADMIN_PASSWORD),
     };
 
-    const superAdmin = await readSingleUser(USER, { email: data.email });
+    const superAdmin = await readSingle(USER, { email: data.email });
 
     if (!superAdmin) {
       await registerSingle(USER, data);
@@ -53,7 +53,7 @@ export const createSuperAdmin = async () => {
 };
 
 export const verifyJWTToken = (token) => {
-  return jwt.verify(token, JWT_SECRET);
+  return jwt.verify(token, process.env.JWT_SECRET);
 };
 
 export const generateOTP = () => {

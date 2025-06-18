@@ -31,7 +31,7 @@ export const registerSingle = async (model, data) => {
     return await model.create(data);
 };
 
-export const readSingleUser = async (model, data) => {
+export const readSingle = async (model, data) => {
     return await model.findOne(data);
 };
 
