@@ -1,6 +1,6 @@
 import { Router } from "express";
 import multer from "multer";
-import { addUser, deleteUser, getAllUsers, getUserById, updateUserRole, updateUserStatus } from "../controllers/adminController.js";
+import { addProject, addUser, deleteUser, getAllProjects, getAllUsers, getManagerProjects, getSingleProject, getUserById, updateUserRole, updateUserStatus } from "../controllers/adminController.js";
 import { protectRoute } from "../Middlewares/authMiddleware.js";
 
 const upload = multer();
@@ -14,6 +14,12 @@ adminRouter
 .delete("/delete-user",upload.none(),protectRoute(['admin']),deleteUser)
 .put("/update-user/:userId",upload.none(),protectRoute(['admin']),updateUserRole)
 .put("/update-user-status/:userId/:action",upload.none(),protectRoute(['admin']),updateUserStatus)
+.post("/add-project", upload.none(), protectRoute(['admin']), addProject)
+.get("/get-all-projects", upload.none(), protectRoute(['admin']), getAllProjects)
+.post("/get-manager-projects", upload.none(), protectRoute(['admin']), getManagerProjects)
+.post("/get-single-project", upload.none(), protectRoute(['admin']), getSingleProject)
+
+
 //updateUserStatus
 
 

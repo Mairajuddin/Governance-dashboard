@@ -19,6 +19,11 @@ const CsvSchema = new mongoose.Schema({
     ref: 'user',
     required: true,
   },
+   project_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'project',
+    required: true,
+  },
   uploadedAt: {
     type: Date,
     default: Date.now,
