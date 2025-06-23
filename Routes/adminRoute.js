@@ -16,8 +16,8 @@ adminRouter
 .put("/update-user-status/:userId/:action",upload.none(),protectRoute(['admin']),updateUserStatus)
 .post("/add-project", upload.none(), protectRoute(['admin']), addProject)
 .get("/get-all-projects", upload.none(), protectRoute(['admin']), getAllProjects)
-.post("/get-manager-projects", upload.none(), protectRoute(['admin']), getManagerProjects)
-.post("/get-single-project", upload.none(), protectRoute(['admin']), getSingleProject)
+.get("/get-manager-projects/:managerId", upload.none(), protectRoute(['admin']), getManagerProjects)
+.get("/get-single-project/:projectId", upload.none(), protectRoute(['admin']), getSingleProject)
 
 
 //updateUserStatus

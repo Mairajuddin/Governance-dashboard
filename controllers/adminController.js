@@ -153,7 +153,7 @@ export const addProject = async (req, res) => {
       return res.status(400).json({ message: 'all field required' })
     }
     const existingProject = await PROJECT.findOne({ name: name, assigned_to: assigned_to })
-    if (existingProject || existingProject.length !== 0) {
+    if (existingProject ) {
       return res.status(400).json({ message: 'Project with this name already assigned to this manager' })
     }
 
@@ -176,7 +176,7 @@ export const addProject = async (req, res) => {
 // --------------------GET ALL PROJECT------------------------------------
 export const getAllProjects = async (req, res) => {
   try {
-    const fetchedProjects = await PROJECT.findOne({})
+    const fetchedProjects = await PROJECT.find({})
     return res.status(200).json({ data: fetchedProjects, message: 'Projects fetche successfully' })
 
   } catch (error) {
@@ -187,8 +187,8 @@ export const getAllProjects = async (req, res) => {
 // ------------------GET PARTICULAR MANAGER  PROJECTS----------------------------
 export const getManagerProjects = async (req, res) => {
   try {
-    const {id}=req.body
-    const fetchedProjects = await PROJECT.findOne({assigned_to:id})
+    const {managerId}=req.params
+    const fetchedProjects = await PROJECT.findOne({assigned_to:managerId})
     return res.status(200).json({ data: fetchedProjects, message: 'Projects fetched successfully' })
 
   } catch (error) {
@@ -199,8 +199,8 @@ export const getManagerProjects = async (req, res) => {
 // -------------------GET SINGLE PROJECT----------------------------------------------
 export const getSingleProject=async(req,res)=>{
   try {
-    const {id}=req.body
-    const existingProject=await PROJECT.findOne({_id:id})
+    const {projectId}=req.params
+    const existingProject=await PROJECT.findOne({_id:projectId})
     if(!existingProject){
       return res.status(200).json({message:'Project not found '})
     }
