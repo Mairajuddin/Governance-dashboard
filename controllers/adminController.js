@@ -174,16 +174,25 @@ export const addProject = async (req, res) => {
 }
 
 // --------------------GET ALL PROJECT------------------------------------
+
+
 export const getAllProjects = async (req, res) => {
   try {
     const fetchedProjects = await PROJECT.find({})
-    return res.status(200).json({ data: fetchedProjects, message: 'Projects fetche successfully' })
+      .populate({
+        path: 'assigned_to',
+        select: 'name avatar',
+        model: 'user', 
+      });
+
+    return res.status(200).json({ data: fetchedProjects, message: 'Projects fetched successfully' });
 
   } catch (error) {
-    console.log(error)
-    return res.status(500).json({ message: 'Internal Server Error' })
+    console.log(error);
+    return res.status(500).json({ message: 'Internal Server Error' });
   }
-}
+};
+
 // ------------------GET PARTICULAR MANAGER  PROJECTS----------------------------
 export const getManagerProjects = async (req, res) => {
   try {
@@ -200,7 +209,12 @@ export const getManagerProjects = async (req, res) => {
 export const getSingleProject=async(req,res)=>{
   try {
     const {projectId}=req.params
-    const existingProject=await PROJECT.findOne({_id:projectId})
+    const existingProject=await PROJECT.find({_id:projectId}).populate({
+        path: 'assigned_to',
+        select: 'name avatar',
+        model: 'user', 
+      });
+     
     if(!existingProject){
       return res.status(200).json({message:'Project not found '})
     }
@@ -208,5 +222,30 @@ export const getSingleProject=async(req,res)=>{
     return res.status(200).json({message:'Project fetched',data:existingProject})
   } catch (error) {
     console.log(error)
+    return  res.status(500).json({message:'Internal Sever Error'})
   }
 }
+// ------------------Manager create project permission Setting----------------------------------------------------
+
+
+export const allowManagerToAddProject = async (req, res) => {
+  try {
+    const { createProject } = req.body;
+
+    const isAllowed = createProject === true || createProject === 'true';
+
+    const result = await USER.updateMany(
+      { role: 'project-manager' },
+      { $set: { is_allowed_create_project: isAllowed } }
+    );
+
+    res.status(200).json({
+      message: `Project creation permission updated for project managers.`,
+      modifiedCount: result.modifiedCount,
+      is_allowed_create_project: isAllowed
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: 'Server error while updating permissions.' });
+  }
+};

@@ -224,3 +224,76 @@ export const resetPassword = async (req, res) => {
   }
 };
 
+// ------------------------CHANGE PROFILE DATA------------------------------------
+
+
+export const changeProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { name } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ message: 'Name is required' });
+    }
+
+    const updatedFields = { name };
+
+    if (req.file) {
+      
+      const avatarPath = `/uploads/avatars/${req.file.filename}`;
+      updatedFields.avatar = avatarPath;
+    }
+
+
+    const updatedUser = await USER.findByIdAndUpdate(userId, updatedFields, { new: true });
+
+    res.status(200).json({ message: 'Profile updated', user: updatedUser });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// -------------CHANGE PASSWORD--------------------------------------------------------
+
+export const changePassword = async (req, res) => {
+  try {
+    const { password, newpassword } = req.body;
+    const { _id } = req.user;
+
+    if (!password || !newpassword) {
+      return res.status(400).json({ message: 'Old and new password are required' });
+    }
+
+    const user = await USER.findById(_id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Old password is incorrect' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newpassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    res.status(200).json({ message: 'Password updated successfully' });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// -----------------GET MY PROFILE-----------------------------------------------
+export const getMyProfile=async(req,res)=>{
+  try {
+    const {_id}=req.user;
+  const user=await USER.findOne({_id:_id})
+  return  res.status(200).json({data:user})
+  } catch (error) {
+    console.log(error)
+    return  res.status(500).json({message:'Internal Sever Error'})
+  }
+}

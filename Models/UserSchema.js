@@ -6,9 +6,12 @@ const userSchema = new Schema({
   name: { type: String, required: true },
   email: { type: String, required: true },
   password: { type: String, required: true },
-  otp_code: { type: String, default: null },
+   avatar: { type: String, default: null },
   role: { type: String, enum: ['admin', 'governance','project-manager','finance-manager'], default: 'governance' }, 
   is_active: { type: Boolean, default: true },
+  is_allowed_create_project: { type: Boolean, default: false },
+  is_allowed_access_settings: { type: Boolean, default: false },
+  
   },
 {
   timestamps: true 
