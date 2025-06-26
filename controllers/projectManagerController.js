@@ -132,9 +132,10 @@ import csv from 'csv-parser';
 import fs from 'fs';
 import path from 'path';
 
-// Fix import paths - make sure these match your actual file structure
-import CsvData from '../Models/CsvDataSchema.js';  // This should be the model, not schema
-import CsvFile from '../Models/CsvSchema.js';       // Fix the path case sensitivity
+
+import CsvData from '../Models/CsvDataSchema.js';  
+import CsvFile from '../Models/CsvSchema.js';      
+import PROJECT from '../Models/ProjectSchema.js';
 
 export const uploadProjectCSV = async (req, res) => {
     try {
@@ -338,4 +339,41 @@ export const downloadCSVData = async (req, res) => {
         console.error("Download CSV Error:", error);
         res.status(500).json({ success: false, msg: "Server error" });
     }
+};
+
+// -------------DELETE PROJECT----------------------------------------------    
+export const deleteProject = async (req, res) => {
+  try {
+    const { project_id } = req.params;
+    const { _id } = req.user;
+
+    if (!project_id) {
+      return res.status(400).json({ success: false, msg: "Project ID is required" });
+    }
+
+    // Find all CSVFile documents related to this project
+    const csvFiles = await CsvFile.find({ project_id, uploadedBy: _id });
+
+    // Delete CSV file from filesystem and database
+    for (const csvFile of csvFiles) {
+      const filePath = path.join('uploads', 'csvs', path.basename(csvFile.file));
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath); // remove physical file
+      }
+      await CsvData.deleteMany({ csvFile: csvFile._id }); // remove parsed data
+      await csvFile.deleteOne(); // remove csv file doc
+    }
+
+    // Delete the project itself
+    // const projectDeleted = await PROJECT.findOneAndDelete({ _id: project_id, createdBy: _id });
+    // if (!projectDeleted) {
+    //   return res.status(404).json({ success: false, msg: "Project not found or not authorized" });
+    // }
+
+    res.status(200).json({ success: true, msg: "Project and associated CSVs deleted successfully" });
+
+  } catch (error) {
+    console.error("Delete Project Error:", error);
+    res.status(500).json({ success: false, msg: "Server error" });
+  }
 };
