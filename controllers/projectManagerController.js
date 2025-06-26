@@ -365,10 +365,10 @@ export const deleteProject = async (req, res) => {
     }
 
     // Delete the project itself
-    // const projectDeleted = await PROJECT.findOneAndDelete({ _id: project_id, createdBy: _id });
-    // if (!projectDeleted) {
-    //   return res.status(404).json({ success: false, msg: "Project not found or not authorized" });
-    // }
+    const projectDeleted = await PROJECT.findOneAndDelete({ _id: project_id, createdBy: _id });
+    if (!projectDeleted) {
+      return res.status(404).json({ success: false, msg: "Project not found or not authorized" });
+    }
 
     res.status(200).json({ success: true, msg: "Project and associated CSVs deleted successfully" });
 
