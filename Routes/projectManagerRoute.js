@@ -1,7 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
 
-import {  deleteProject, downloadCSVData, getCSVDataById, getProjectCSVData, uploadProjectCSV } from "../controllers/projectManagerController.js";
+import {  deleteProject, downloadCSVData, getCSVDataById, getProjectCSVData, replaceProjectCSV, uploadProjectCSV } from "../controllers/projectManagerController.js";
 import csvUploadMiddleware from "../Middlewares/csvUploadMiddleware.js";
 import { protectRoute } from "../Middlewares/authMiddleware.js";
 
@@ -17,7 +17,15 @@ pmRouter
   '/project/:project_id',
   protectRoute(['project-manager']),
   deleteProject
+)
+.put(
+  '/csv/replace/:csvFileId',
+  csvUploadMiddleware.single('file'),
+  protectRoute(['project-manager']),
+  replaceProjectCSV
 );
+
+;
   // .get('/get-all-csv',protectRoute(['admin','project-manager']), getUploadedCSVs)
   // .delete('/delete-csv/:csvId',protectRoute(['admin','project-manager']), deleteCSV)
 

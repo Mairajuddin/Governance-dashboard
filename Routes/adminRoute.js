@@ -11,7 +11,7 @@ adminRouter
 .post("/add-user",upload.none(),protectRoute(['admin']),addUser)
 .get("/get-all-users",upload.none(),protectRoute(['admin']),getAllUsers)
 .get("/get-user/:userId",upload.none(),protectRoute(['admin']),getUserById)
-.delete("/delete-user",upload.none(),protectRoute(['admin']),deleteUser)
+.delete("/delete-user/:userId",upload.none(),protectRoute(['admin']),deleteUser)
 .put("/update-user/:userId",upload.none(),protectRoute(['admin']),updateUserRole)
 .put("/update-user-status/:userId/:action",upload.none(),protectRoute(['admin']),updateUserStatus)
 .post("/add-project", upload.none(), protectRoute(['admin']), addProject)
