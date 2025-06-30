@@ -4,89 +4,89 @@ import fs from 'fs';
 import path from 'path';
 
 
-import CsvData from '../Models/CsvDataSchema.js';  
-import CsvFile from '../Models/CsvSchema.js';      
+import CsvData from '../Models/CsvDataSchema.js';
+import CsvFile from '../Models/CsvSchema.js';
 import PROJECT from '../Models/ProjectSchema.js';
 
 export const uploadProjectCSV = async (req, res) => {
-    try {
-        const { csvType, name, project_id } = req.body;
-        
-        const { _id } = req.user;
+  try {
+    const { csvType, name, project_id } = req.body;
 
-        if (!req.file) {
-            return res.status(400).json({ success: false, msg: "No file uploaded" });
-        }
+    const { _id } = req.user;
 
-        if (!project_id) {
-            return res.status(400).json({ success: false, msg: "Project ID is required" });
-        }
-
-        const normalizedName = (name || req.file.originalname)?.trim().toLowerCase();
-       
-        const existingCSV = await CsvFile.findOne({
-            name: normalizedName,
-            uploadedBy: _id,
-        });
-        
-        if (existingCSV) {
-            return res.status(400).json({ success: false, message: 'CSV with this name already exists for this user' });
-        }
-
-        // Create CSV file record
-        const CSVFile = await CsvFile.create({
-            name: normalizedName,
-            file: `/uploads/csvs/${req.file.filename}`,
-            csvType,
-            uploadedBy: _id,
-            project_id, // Add project reference
-        });
-
-        // Parse CSV file
-        const filePath = path.join('uploads', 'csvs', req.file.filename);
-        const parsedData = [];
-        let headers = [];
-
-        // Read and parse CSV
-        await new Promise((resolve, reject) => {
-            fs.createReadStream(filePath)
-                .pipe(csv())
-                .on('headers', (headerList) => {
-                    headers = headerList;
-                })
-                .on('data', (row) => {
-                    parsedData.push(row);
-                })
-                .on('end', resolve)
-                .on('error', reject);
-        });
-
-        // Save parsed data to database - Use CsvData model, not CsvDataSchema
-        const csvData = await CsvData.create({
-            csvFile: CSVFile._id,
-            project_id,
-            csvType,
-            uploadedBy: _id,
-            data: parsedData,
-            headers,
-            rowCount: parsedData.length,
-        });
-
-        res.status(200).json({
-            success: true,
-            message: "CSV uploaded and parsed successfully",
-            CSVFile,
-            csvData: {
-                id: csvData._id,
-                rowCount: csvData.rowCount,
-                headers: csvData.headers,
-            },
-        });
-
-    } catch (error) {
-        console.error("Upload CSV Error:", error);
-        res.status(500).json({ success: false, msg: "Server error" });
+    if (!req.file) {
+      return res.status(400).json({ success: false, msg: "No file uploaded" });
     }
+
+    if (!project_id) {
+      return res.status(400).json({ success: false, msg: "Project ID is required" });
+    }
+
+    const normalizedName = (name || req.file.originalname)?.trim().toLowerCase();
+
+    const existingCSV = await CsvFile.findOne({
+      name: normalizedName,
+      uploadedBy: _id,
+    });
+
+    if (existingCSV) {
+      return res.status(400).json({ success: false, message: 'CSV with this name already exists for this user' });
+    }
+
+    // Create CSV file record
+    const CSVFile = await CsvFile.create({
+      name: normalizedName,
+      file: `/uploads/csvs/${req.file.filename}`,
+      csvType,
+      uploadedBy: _id,
+      project_id, // Add project reference
+    });
+
+    // Parse CSV file
+    const filePath = path.join('uploads', 'csvs', req.file.filename);
+    const parsedData = [];
+    let headers = [];
+
+    // Read and parse CSV
+    await new Promise((resolve, reject) => {
+      fs.createReadStream(filePath)
+        .pipe(csv())
+        .on('headers', (headerList) => {
+          headers = headerList;
+        })
+        .on('data', (row) => {
+          parsedData.push(row);
+        })
+        .on('end', resolve)
+        .on('error', reject);
+    });
+
+    // Save parsed data to database - Use CsvData model, not CsvDataSchema
+    const csvData = await CsvData.create({
+      csvFile: CSVFile._id,
+      project_id,
+      csvType,
+      uploadedBy: _id,
+      data: parsedData,
+      headers,
+      rowCount: parsedData.length,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "CSV uploaded and parsed successfully",
+      CSVFile,
+      csvData: {
+        id: csvData._id,
+        rowCount: csvData.rowCount,
+        headers: csvData.headers,
+      },
+    });
+
+  } catch (error) {
+    console.error("Upload CSV Error:", error);
+    res.status(500).json({ success: false, msg: "Server error" });
+  }
 };
 
 // Get CSV data by project ID
@@ -112,7 +112,7 @@ export const uploadProjectCSV = async (req, res) => {
 
 
 //           let mainPhases = [];
-        
+
 //         if (csvData && csvData.length > 0) {
 //             // Assuming CSV data is stored in each document's 'data' field
 //             csvData.forEach(document => {
@@ -162,18 +162,19 @@ export const getProjectCSVData = async (req, res) => {
     let sunburstData = [];
 
     if (csvData && csvData.length > 0) {
-      csvData.forEach(document => {
-        if (document.data && Array.isArray(document.data)) {
-          const phases = document.data.filter(item =>
-            item["Project Stage"] &&
-            item["Task"] === item["Project Stage"]
-          );
-          mainPhases = [...mainPhases, ...phases];
-        }
-      });
+      if (!csvType || csvType === "schedule") {
+        csvData.forEach(document => {
+          if (document.data && Array.isArray(document.data)) {
+            const phases = document.data.filter(item =>
+              item["Project Stage"] &&
+              item["Task"] === item["Project Stage"]
+            );
+            mainPhases = [...mainPhases, ...phases];
+          }
+        });
+      }
 
-      // 👇 This block handles sunburstData if CSV type is 'finance'
-      // if (csvType === "finance" && !csvType) {
+      if (!csvType || csvType === "finance") {
         const hierarchy = {};
 
         csvData.forEach(doc => {
@@ -188,7 +189,7 @@ export const getProjectCSVData = async (req, res) => {
 
               hierarchy[ledger] ??= {};
               hierarchy[ledger][centre] ??= {};
-              hierarchy[ledger][centre][vendor] = 
+              hierarchy[ledger][centre][vendor] =
                 (hierarchy[ledger][centre][vendor] || 0) + value;
             });
           }
@@ -202,7 +203,7 @@ export const getProjectCSVData = async (req, res) => {
           );
 
         sunburstData = buildSunburst(hierarchy);
-      // }
+      }
     }
 
     res.status(200).json({
@@ -221,75 +222,75 @@ export const getProjectCSVData = async (req, res) => {
 
 // Get specific CSV data by ID
 export const getCSVDataById = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { _id } = req.user;
+  try {
+    const { id } = req.params;
+    const { _id } = req.user;
 
-        const csvData = await CsvData.findOne({
-            _id: id,
-            uploadedBy: _id,
-        })
-        .populate('csvFile', 'name file')
-        .populate('project_id', 'name');
+    const csvData = await CsvData.findOne({
+      _id: id,
+      uploadedBy: _id,
+    })
+      .populate('csvFile', 'name file')
+      .populate('project_id', 'name');
 
-        if (!csvData) {
-            return res.status(404).json({ success: false, msg: "CSV data not found" });
-        }
-
-        res.status(200).json({
-            success: true,
-            data: csvData,
-        });
-
-    } catch (error) {
-        console.error("Get CSV Data By ID Error:", error);
-        res.status(500).json({ success: false, msg: "Server error" });
+    if (!csvData) {
+      return res.status(404).json({ success: false, msg: "CSV data not found" });
     }
+
+    res.status(200).json({
+      success: true,
+      data: csvData,
+    });
+
+  } catch (error) {
+    console.error("Get CSV Data By ID Error:", error);
+    res.status(500).json({ success: false, msg: "Server error" });
+  }
 };
 
 // Convert JSON back to CSV format for download
 export const downloadCSVData = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { _id } = req.user;
+  try {
+    const { id } = req.params;
+    const { _id } = req.user;
 
-        const csvData = await CsvData.findOne({
-            _id: id,
-            uploadedBy: _id,
-        }).populate('csvFile', 'name');
+    const csvData = await CsvData.findOne({
+      _id: id,
+      uploadedBy: _id,
+    }).populate('csvFile', 'name');
 
-        if (!csvData) {
-            return res.status(404).json({ success: false, msg: "CSV data not found" });
-        }
-
-        // Convert JSON back to CSV
-        const headers = csvData.headers;
-        const rows = csvData.data;
-
-        let csvContent = headers.join(',') + '\n';
-        
-        rows.forEach(row => {
-            const values = headers.map(header => {
-                const value = row[header] || '';
-                // Escape commas and quotes in values
-                return typeof value === 'string' && (value.includes(',') || value.includes('"')) 
-                    ? `"${value.replace(/"/g, '""')}"` 
-                    : value;
-            });
-            csvContent += values.join(',') + '\n';
-        });
-
-        res.set({
-            'Content-Type': 'text/csv',
-            'Content-Disposition': `attachment; filename="${csvData.csvFile.name}.csv"`,
-        });
-
-        res.send(csvContent);
-
-    } catch (error) {
-        console.error("Download CSV Error:", error);
-        res.status(500).json({ success: false, msg: "Server error" });
+    if (!csvData) {
+      return res.status(404).json({ success: false, msg: "CSV data not found" });
     }
+
+    // Convert JSON back to CSV
+    const headers = csvData.headers;
+    const rows = csvData.data;
+
+    let csvContent = headers.join(',') + '\n';
+
+    rows.forEach(row => {
+      const values = headers.map(header => {
+        const value = row[header] || '';
+        // Escape commas and quotes in values
+        return typeof value === 'string' && (value.includes(',') || value.includes('"'))
+          ? `"${value.replace(/"/g, '""')}"`
+          : value;
+      });
+      csvContent += values.join(',') + '\n';
+    });
+
+    res.set({
+      'Content-Type': 'text/csv',
+      'Content-Disposition': `attachment; filename="${csvData.csvFile.name}.csv"`,
+    });
+
+    res.send(csvContent);
+
+  } catch (error) {
+    console.error("Download CSV Error:", error);
+    res.status(500).json({ success: false, msg: "Server error" });
+  }
 };
 
 // -------------DELETE PROJECT----------------------------------------------    
