@@ -152,7 +152,8 @@ export const getProjectCSVData = async (req, res) => {
     if (csvType) {
       filter.csvType = csvType;
     }
-
+    const ProjectDetails = await PROJECT.findOne({ _id: project_id, assigned_to: _id });
+    console.log("Project Details:", ProjectDetails);
     const csvData = await CsvData.find(filter)
       .populate('csvFile', 'name file')
       .populate('project_id', 'name')
@@ -208,6 +209,7 @@ export const getProjectCSVData = async (req, res) => {
 
     res.status(200).json({
       success: true,
+      projectDetails: ProjectDetails,
       data: csvData,
       mainPhases,
       sunburstData,
