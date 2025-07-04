@@ -206,26 +206,32 @@ export const getProjectById = async (req, res) => {
 
         sunburstData = buildSunburst(hierarchy);
       }
-      if (!csvType || csvType === "risk-indicatore") {
-        csvData.forEach(document => {
-          if (document.data && Array.isArray(document.data)) {
-            document.data.forEach(row => {
-              healthData.push({
-                safetyHealth: row["Safety Health"],
-                safetyComments: row["Safety Comments"],
-                qualityHealth: row["Quality Health"],
-                qualityComments: row["Quality Comments"],
-                scopeHealth: row["Scope Health"],
-                scopeComments: row["Scope Comments"],
-                timeHealth: row["Time Health"],
-                timeComments: row["Time Comments"],
-                costHealth: row["Cost Health"],
-                costComments: row["Cost Comments"]
-              });
-            });
-          }
-        });
-      }
+     if (!csvType || csvType === "risk-indicatore") {
+  healthData = csvData
+    .filter(doc => doc.csvType === "risk-indicatore")
+    .flatMap(doc => 
+      (doc.data || [])
+        .filter(row => 
+          row["Safety Health"] !== undefined || 
+          row["Quality Health"] !== undefined ||
+          row["Scope Health"] !== undefined ||
+          row["Time Health"] !== undefined ||
+          row["Cost Health"] !== undefined
+        )
+        .map(row => ({
+          safetyHealth: row["Safety Health"],
+          safetyComments: row["Safety Comments"],
+          qualityHealth: row["Quality Health"],
+          qualityComments: row["Quality Comments"],
+          scopeHealth: row["Scope Health"],
+          scopeComments: row["Scope Comments"],
+          timeHealth: row["Time Health"],
+          timeComments: row["Time Comments"],
+          costHealth: row["Cost Health"],
+          costComments: row["Cost Comments"]
+        }))
+    );
+}
     }
 
     res.status(200).json({
