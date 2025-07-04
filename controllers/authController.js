@@ -6,6 +6,7 @@ import { dirname } from "path";
 import path from "path";
 import ejs from "ejs";
 import fs from "fs";
+import cloudinary from '../services/cloudinaryUtil.js';
 
 import { encryptPassword, generateOTP, sendEmail } from "../services/common_utils.js";
 import { readSingle, updateSingleUser } from "../db/db.js";
@@ -227,6 +228,35 @@ export const resetPassword = async (req, res) => {
 // ------------------------CHANGE PROFILE DATA------------------------------------
 
 
+// export const changeProfile = async (req, res) => {
+//   try {
+//     const userId = req.user.id;
+//     const { name } = req.body;
+
+//     if (!name) {
+//       return res.status(400).json({ message: 'Name is required' });
+//     }
+
+//     const updatedFields = { name };
+
+//     if (req.file) {
+      
+//       const avatarPath = `/uploads/avatars/${req.file.filename}`;
+//       updatedFields.avatar = avatarPath;
+//     }
+
+
+//     const updatedUser = await USER.findByIdAndUpdate(userId, updatedFields, { new: true });
+
+//     res.status(200).json({ message: 'Profile updated', user: updatedUser });
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// };
+
+
+
 export const changeProfile = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -238,18 +268,30 @@ export const changeProfile = async (req, res) => {
 
     const updatedFields = { name };
 
+    // If file is uploaded
     if (req.file) {
-      
-      const avatarPath = `/uploads/avatars/${req.file.filename}`;
-      updatedFields.avatar = avatarPath;
-    }
+      // Upload image to Cloudinary
+      const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+        folder: 'user_avatars', // optional: folder name in your Cloudinary account
+        public_id: `avatar_${userId}`, // optional: custom public_id
+        overwrite: true, // overwrite previous image if same public_id
+      });
 
+      // Set the avatar URL from Cloudinary
+      updatedFields.avatar = uploadResult.secure_url;
+
+      // Remove the local file after upload
+      fs.unlinkSync(req.file.path);
+    }
 
     const updatedUser = await USER.findByIdAndUpdate(userId, updatedFields, { new: true });
 
-    res.status(200).json({ message: 'Profile updated', user: updatedUser });
+    res.status(200).json({
+      message: 'Profile updated',
+      user: updatedUser,
+    });
   } catch (error) {
-    console.log(error);
+    console.error('Error updating profile:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
