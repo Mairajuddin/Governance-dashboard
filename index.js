@@ -18,7 +18,16 @@ app.use('/uploads', express.static('uploads'));
 app
   .use(express.json())
   .use(express.urlencoded({ extended: true }))
-  .use(cors())
+  // .use(cors())
+   app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'https://f2d7-2400-adc1-120-cd00-f52d-5b9e-4c97-4e12.ngrok-free.app'
+  ],
+  credentials: true
+}))
+app
   .use("/api/auth", authRouter)
   .use("/api/admin", adminRouter)
   .use("/api/pm", pmRouter)
