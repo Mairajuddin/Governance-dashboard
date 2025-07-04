@@ -90,7 +90,7 @@ export const uploadProjectCSV = async (req, res) => {
 };
 
 // Get CSV data by project ID
-// export const getProjectCSVData = async (req, res) => {
+// export const getProjectById = async (req, res) => {
 //     try {
 //         const { project_id } = req.params;
 //         const { csvType } = req.query;
@@ -138,7 +138,7 @@ export const uploadProjectCSV = async (req, res) => {
 //         res.status(500).json({ success: false, msg: "Server error" });
 //     }
 // };
-export const getProjectCSVData = async (req, res) => {
+export const getProjectById = async (req, res) => {
   try {
     const { project_id } = req.params;
     const { csvType } = req.query;
@@ -161,6 +161,7 @@ export const getProjectCSVData = async (req, res) => {
 
     let mainPhases = [];
     let sunburstData = [];
+    let healthData = [];
 
     if (csvData && csvData.length > 0) {
       if (!csvType || csvType === "schedule") {
@@ -205,6 +206,26 @@ export const getProjectCSVData = async (req, res) => {
 
         sunburstData = buildSunburst(hierarchy);
       }
+      if (!csvType || csvType === "risk-indicatore") {
+        csvData.forEach(document => {
+          if (document.data && Array.isArray(document.data)) {
+            document.data.forEach(row => {
+              healthData.push({
+                safetyHealth: row["Safety Health"],
+                safetyComments: row["Safety Comments"],
+                qualityHealth: row["Quality Health"],
+                qualityComments: row["Quality Comments"],
+                scopeHealth: row["Scope Health"],
+                scopeComments: row["Scope Comments"],
+                timeHealth: row["Time Health"],
+                timeComments: row["Time Comments"],
+                costHealth: row["Cost Health"],
+                costComments: row["Cost Comments"]
+              });
+            });
+          }
+        });
+      }
     }
 
     res.status(200).json({
@@ -213,6 +234,7 @@ export const getProjectCSVData = async (req, res) => {
       data: csvData,
       mainPhases,
       sunburstData,
+      healthData
     });
 
   } catch (error) {
