@@ -3,6 +3,8 @@ import USER from "../Models/UserSchema.js";
 import jwt from 'jsonwebtoken';
 import { encryptPassword } from "../services/common_utils.js";
 import PROJECT from "../Models/ProjectSchema.js";
+import CsvData from '../Models/CsvDataSchema.js';
+
 
 
 // -------------------ADMIN ADD USER---------------------------------------
@@ -247,5 +249,117 @@ export const allowManagerToAddProject = async (req, res) => {
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: 'Server error while updating permissions.' });
+  }
+};
+
+// --------------------GET PROJECT BY ID-----------------------
+export const getManagerProjectById = async (req, res) => {
+  try {
+    const { project_id } = req.params;
+    const { csvType } = req.query;
+    // const { _id } = req.user;
+
+    const filter = {
+      project_id,
+      // uploadedBy: _id,
+    };
+
+    if (csvType) {
+      filter.csvType = csvType;
+    }
+    const ProjectDetails = await PROJECT.findOne({ _id: project_id });
+    console.log("Project Details:", ProjectDetails);
+    const csvData = await CsvData.find(filter)
+      .populate('csvFile', 'name file')
+      .populate('project_id', 'name')
+      .sort({ uploadedAt: -1 });
+
+    let mainPhases = [];
+    let sunburstData = [];
+    let healthData = [];
+
+    if (csvData && csvData.length > 0) {
+      if (!csvType || csvType === "schedule") {
+        csvData.forEach(document => {
+          if (document.data && Array.isArray(document.data)) {
+            const phases = document.data.filter(item =>
+              item["Project Stage"] &&
+              item["Task"] === item["Project Stage"]
+            );
+            mainPhases = [...mainPhases, ...phases];
+          }
+        });
+      }
+
+      if (!csvType || csvType === "finance") {
+        const hierarchy = {};
+
+        csvData.forEach(doc => {
+          if (Array.isArray(doc.data)) {
+            doc.data.forEach(row => {
+              const ledger = row["General Ledger Name"];
+              const centre = row["Cost Centre Name"];
+              const vendor = row["Name"];
+              const value = parseFloat(row["Total Net Value"]);
+
+              if (!ledger || !centre || !vendor || isNaN(value)) return;
+
+              hierarchy[ledger] ??= {};
+              hierarchy[ledger][centre] ??= {};
+              hierarchy[ledger][centre][vendor] =
+                (hierarchy[ledger][centre][vendor] || 0) + value;
+            });
+          }
+        });
+
+        const buildSunburst = (node) =>
+          Object.entries(node).map(([k, v]) =>
+            typeof v === "object"
+              ? { name: k, children: buildSunburst(v) }
+              : { name: k, value: v }
+          );
+
+        sunburstData = buildSunburst(hierarchy);
+      }
+     if (!csvType || csvType === "risk-indicatore") {
+  healthData = csvData
+    .filter(doc => doc.csvType === "risk-indicatore")
+    .flatMap(doc => 
+      (doc.data || [])
+        .filter(row => 
+          row["Safety Health"] !== undefined || 
+          row["Quality Health"] !== undefined ||
+          row["Scope Health"] !== undefined ||
+          row["Time Health"] !== undefined ||
+          row["Cost Health"] !== undefined
+        )
+        .map(row => ({
+          safetyHealth: row["Safety Health"],
+          safetyComments: row["Safety Comments"],
+          qualityHealth: row["Quality Health"],
+          qualityComments: row["Quality Comments"],
+          scopeHealth: row["Scope Health"],
+          scopeComments: row["Scope Comments"],
+          timeHealth: row["Time Health"],
+          timeComments: row["Time Comments"],
+          costHealth: row["Cost Health"],
+          costComments: row["Cost Comments"]
+        }))
+    );
+}
+    }
+
+    res.status(200).json({
+      success: true,
+      projectDetails: ProjectDetails,
+      data: csvData,
+      mainPhases,
+      sunburstData,
+      healthData
+    });
+
+  } catch (error) {
+    console.error("Get CSV Data Error:", error);
+    res.status(500).json({ success: false, msg: "Server error" });
   }
 };

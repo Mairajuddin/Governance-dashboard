@@ -1,0 +1,11 @@
+Date,Description,Category,Amount,Account,Type
+2023-01-05,Grocery Store,Food,125.50,Checking,Expense
+2023-01-07,Salary Deposit,Income,2500.00,Checking,Income
+2023-01-10,Electric Bill,Utilities,85.75,Checking,Expense
+2023-01-12,Gas Station,Transportation,45.30,Checking,Expense
+2023-01-15,Online Shopping,Shopping,89.99,Credit Card,Expense
+2023-01-18,Dinner Out,Food,67.40,Credit Card,Expense
+2023-01-20,Dividend Payment,Investment,150.00,Brokerage,Income
+2023-01-22,Gym Membership,Health,35.00,Checking,Expense
+2023-01-25,Stock Purchase,Investment,500.00,Brokerage,Transfer
+2023-01-28,Mobile Phone,Utilities,45.99,Checking,Expense

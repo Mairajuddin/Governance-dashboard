@@ -4,7 +4,7 @@ import { createSuperAdmin } from '../services/common_utils.js';
 
 
 export const connectDB = () => {
-    const connectionURL = 'mongodb://127.0.0.1:27017/gareth-project';
+    const connectionURL = process.env.DATABASE_CONNECTION_KEY;
 
     mongoose.connect(connectionURL)
         .then(() => console.log('Connected!'));
