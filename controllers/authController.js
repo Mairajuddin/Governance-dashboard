@@ -10,6 +10,7 @@ import cloudinary from '../services/cloudinaryUtil.js';
 
 import { encryptPassword, generateOTP, sendEmail } from "../services/common_utils.js";
 import { readSingle, updateSingleUser } from "../db/db.js";
+import PROJECT from "../Models/ProjectSchema.js";
 const JWT_SECRET = process.env.JWT_SECRET; // Make sure it's in your .env
 // -----------------------------REGISTER-------------------------------------
 export const registerUser=async(req,res)=>{
@@ -75,6 +76,11 @@ console.log(isMatch, 'isMatch')
 
     
     const { password: pwd, ...userWithoutPassword } = user.toObject();
+
+if (user.role === 'project-manager') {
+      const assignedProject = await PROJECT.findOne({ assigned_to: user._id, is_active: true }).lean();
+      userWithoutPassword.assignedProject = assignedProject || null;
+    }
 
     res.status(200).json({
       success: true,
@@ -329,13 +335,38 @@ export const changePassword = async (req, res) => {
 };
 
 // -----------------GET MY PROFILE-----------------------------------------------
-export const getMyProfile=async(req,res)=>{
+// export const getMyProfile=async(req,res)=>{
+//   try {
+//     const {_id}=req.user;
+//   const user=await USER.findOne({_id:_id})
+//   return  res.status(200).json({data:user})
+//   } catch (error) {
+//     console.log(error)
+//     return  res.status(500).json({message:'Internal Sever Error'})
+//   }
+// }
+export const getMyProfile = async (req, res) => {
   try {
-    const {_id}=req.user;
-  const user=await USER.findOne({_id:_id})
-  return  res.status(200).json({data:user})
+    const { _id } = req.user;
+
+    // Fetch user
+    const user = await USER.findOne({ _id }).lean(); // .lean() returns a plain JS object
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // If user is project-manager, fetch assigned project
+    if (user.role === 'project-manager') {
+      const assignedProject = await PROJECT.findOne({ assigned_to: _id, is_active: true }).lean();
+      user.assignedProject = assignedProject || null;
+    }
+
+    // Return user with embedded assignedProject
+    return res.status(200).json({ data: user });
+
   } catch (error) {
-    console.log(error)
-    return  res.status(500).json({message:'Internal Sever Error'})
+    console.error(error);
+    return res.status(500).json({ message: 'Internal Server Error' });
   }
-}
+};

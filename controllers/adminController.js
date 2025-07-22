@@ -4,7 +4,8 @@ import jwt from 'jsonwebtoken';
 import { encryptPassword } from "../services/common_utils.js";
 import PROJECT from "../Models/ProjectSchema.js";
 import CsvData from '../Models/CsvDataSchema.js';
-
+import fs from 'fs';
+import cloudinary from "../services/cloudinaryUtil.js";
 
 
 // -------------------ADMIN ADD USER---------------------------------------
@@ -148,32 +149,63 @@ export const updateUserStatus = async (req, res) => {
 
 // -----------------------CREATE PROJECT----------------------------------------------------
 
+
+
 export const addProject = async (req, res) => {
   try {
-    const { name, description, location, assigned_to } = req.body
-    if (!name || !description || !location || !assigned_to) {
-      return res.status(400).json({ message: 'all field required' })
-    }
-    const existingProject = await PROJECT.findOne({ name: name, assigned_to: assigned_to })
-    if (existingProject ) {
-      return res.status(400).json({ message: 'Project with this name already assigned to this manager' })
+    const { name, description, location, assigned_to, company_name } = req.body;
+
+    // Validation
+    if (!name || !description || !location || !assigned_to || !company_name) {
+      return res.status(400).json({ message: 'All fields are required' });
     }
 
-    const newProject = new PROJECT({
+    // Duplicate check
+    // const existingProject = await PROJECT.findOne({ name, assigned_to });
+    // if (existingProject) {
+    //   return res.status(400).json({ message: 'Project with this name already assigned to this manager' });
+    // }
+
+const existingProject = await PROJECT.findOne({  assigned_to });
+    if (existingProject) {
+      return res.status(400).json({ message: 'A Project already assigned to this manager' });
+    }
+
+    // Build project data
+    const projectData = {
       name,
       description,
       location,
-      assigned_to
-    });
+      assigned_to,
+      company_name
+    };
 
-    await newProject.save()
- return res.status(200).json({data:newProject,message:'Successfully add project'})
+    // Handle logo upload (if file provided)
+    if (req.file) {
+      const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+        folder: 'company_logos',
+        public_id: `company_${assigned_to}`,
+        overwrite: true,
+      });
+
+      projectData.logo = uploadResult.secure_url;
+
+      // Clean up local temp file
+      fs.unlinkSync(req.file.path);
+    }
+
+    // Save project
+    const newProject = new PROJECT(projectData);
+    await newProject.save();
+
+    return res.status(200).json({ data: newProject, message: 'Successfully added project' });
+
   } catch (error) {
-    console.log(error)
+    console.error('Add Project Error:', error);
     return res.status(500).json({ message: 'Server error while adding project' });
-
   }
-}
+};
+
 
 // --------------------GET ALL PROJECT------------------------------------
 
