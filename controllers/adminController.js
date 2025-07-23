@@ -161,15 +161,15 @@ export const addProject = async (req, res) => {
     }
 
     // Duplicate check
-    // const existingProject = await PROJECT.findOne({ name, assigned_to });
-    // if (existingProject) {
-    //   return res.status(400).json({ message: 'Project with this name already assigned to this manager' });
-    // }
-
-const existingProject = await PROJECT.findOne({  assigned_to });
+    const existingProject = await PROJECT.findOne({ name, assigned_to });
     if (existingProject) {
-      return res.status(400).json({ message: 'A Project already assigned to this manager' });
+      return res.status(400).json({ message: 'Project with this name already assigned to this manager' });
     }
+
+// const existingProject = await PROJECT.findOne({  assigned_to });
+//     if (existingProject) {
+//       return res.status(400).json({ message: 'A Project already assigned to this manager' });
+//     }
 
     // Build project data
     const projectData = {
@@ -231,7 +231,7 @@ export const getAllProjects = async (req, res) => {
 export const getManagerProjects = async (req, res) => {
   try {
     const {managerId}=req.params
-    const fetchedProjects = await PROJECT.findOne({assigned_to:managerId})
+    const fetchedProjects = await PROJECT.find({assigned_to:managerId})
     return res.status(200).json({ data: fetchedProjects, message: 'Projects fetched successfully' })
 
   } catch (error) {
