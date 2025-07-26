@@ -6,6 +6,9 @@ import PROJECT from "../Models/ProjectSchema.js";
 import CsvData from '../Models/CsvDataSchema.js';
 import fs from 'fs';
 import cloudinary from "../services/cloudinaryUtil.js";
+import CsvFile from '../Models/CsvSchema.js';
+
+import path from 'path';
 
 
 // -------------------ADMIN ADD USER---------------------------------------
@@ -203,6 +206,113 @@ export const addProject = async (req, res) => {
   } catch (error) {
     console.error('Add Project Error:', error);
     return res.status(500).json({ message: 'Server error while adding project' });
+  }
+};
+
+// ----------------UPDATE pROJECT----------------------------------------------------
+
+
+export const updateProject = async (req, res) => {
+  try {
+    const { id } = req.params; // project ID
+    const { name, description, location, assigned_to, company_name } = req.body;
+
+    const project = await PROJECT.findById(id);
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    const isAssignedToChanged = project.assigned_to.toString() !== assigned_to;
+
+    // Upload new logo if provided
+    if (req.file) {
+      const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+        folder: 'company_logos',
+        public_id: `company_${assigned_to}`,
+        overwrite: true,
+      });
+      project.logo = uploadResult.secure_url;
+
+      // Remove local temp file
+      fs.unlinkSync(req.file.path);
+    }
+
+    // Update project fields
+    project.name = name || project.name;
+    project.description = description || project.description;
+    project.location = location || project.location;
+    project.company_name = company_name || project.company_name;
+    project.assigned_to = assigned_to || project.assigned_to;
+
+    await project.save();
+
+    // If manager changed, delete all associated CSVs and parsed data
+    if (isAssignedToChanged) {
+      const csvFiles = await CsvFile.find({ project_id: project._id });
+
+      for (const csv of csvFiles) {
+        const csvData = await CsvData.findOne({ csvFile: csv._id });
+
+        // Delete parsed CSV data
+        if (csvData) await csvData.deleteOne();
+
+        // Delete actual CSV file from server (optional)
+        const filePath = path.join('uploads', 'csvs', path.basename(csv.file));
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+
+        // Delete CSV file record
+        await csv.deleteOne();
+      }
+    }
+
+    return res.status(200).json({ message: 'Project updated successfully', data: project });
+
+  } catch (error) {
+    console.error('Update Project Error:', error);
+    return res.status(500).json({ message: 'Server error while updating project' });
+  }
+};
+
+// ----------------DELETE PROJECT----------------------------------------------------------
+
+
+export const deleteProject = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 1. Find the project
+    const project = await PROJECT.findById(id);
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    // 2. Find and delete all CSV files and parsed data
+    const csvFiles = await CsvFile.find({ project_id: id });
+
+    for (const csv of csvFiles) {
+      // Delete CSV parsed data
+      await CsvData.deleteOne({ csvFile: csv._id });
+
+      // Delete actual CSV file from disk (optional)
+      const filePath = path.join('uploads', 'csvs', path.basename(csv.file));
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+
+      // Delete CsvFile record
+      await csv.deleteOne();
+    }
+
+    // 3. Delete the project
+    await project.deleteOne();
+
+    return res.status(200).json({ message: 'Project and associated CSVs deleted successfully' });
+
+  } catch (error) {
+    console.error('Delete Project Error:', error);
+    return res.status(500).json({ message: 'Server error while deleting project' });
   }
 };
 

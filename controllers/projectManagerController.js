@@ -233,6 +233,7 @@ export const getProjectById = async (req, res) => {
     );
 }
     }
+    const SingleHealthData = healthData.length > 0 ? healthData[0] : {};
 
     res.status(200).json({
       success: true,
@@ -240,7 +241,8 @@ export const getProjectById = async (req, res) => {
       data: csvData,
       mainPhases,
       sunburstData,
-      healthData
+      healthData:SingleHealthData
+      // healthData
     });
 
   } catch (error) {

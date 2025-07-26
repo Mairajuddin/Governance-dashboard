@@ -1,6 +1,6 @@
 import { Router } from "express";
 import multer from "multer";
-import { addProject, addUser, allowManagerToAddProject, deleteUser, getAllProjects, getAllUsers, getManagerProjectById, getManagerProjects, getSingleProject, getUserById, updateUserRole, updateUserStatus } from "../controllers/adminController.js";
+import { addProject, addUser, allowManagerToAddProject, deleteProject, deleteUser, getAllProjects, getAllUsers, getManagerProjectById, getManagerProjects, getSingleProject, getUserById, updateProject, updateUserRole, updateUserStatus } from "../controllers/adminController.js";
 import { protectRoute } from "../Middlewares/authMiddleware.js";
 import imageUploadMiddleware from "../Middlewares/uploadMiddleware.js";
 
@@ -17,6 +17,8 @@ adminRouter
 .put("/update-user/:userId",upload.none(),protectRoute(['admin']),updateUserRole)
 .put("/update-user-status/:userId/:action",upload.none(),protectRoute(['admin']),updateUserStatus)
 .post("/add-project",imageUploadMiddleware.single('logo'), protectRoute(['admin']), addProject)
+.put("/update-project/:id", imageUploadMiddleware.single('logo'), protectRoute(['admin']), updateProject)
+.delete("/delete-project/:id", upload.none(), protectRoute(['admin']), deleteProject)
 .get("/get-all-projects", upload.none(), protectRoute(['admin']), getAllProjects)
 
 // ye jo api hy bc ye manager ke khud ke project list karwane ke liye hy 
