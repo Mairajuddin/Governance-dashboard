@@ -490,6 +490,8 @@ export const getManagerProjectById = async (req, res) => {
     );
 }
     }
+        const SingleHealthData = healthData.length > 0 ? healthData[0] : {};
+
 
     res.status(200).json({
       success: true,
@@ -497,7 +499,7 @@ export const getManagerProjectById = async (req, res) => {
       data: csvData,
       mainPhases,
       sunburstData,
-      healthData
+      healthData:SingleHealthData
     });
 
   } catch (error) {
