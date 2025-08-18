@@ -8,10 +8,89 @@ import CsvData from '../Models/CsvDataSchema.js';
 import CsvFile from '../Models/CsvSchema.js';
 import PROJECT from '../Models/ProjectSchema.js';
 
+// export const uploadProjectCSV = async (req, res) => {
+//   try {
+//     const { csvType, name, project_id } = req.body;
+
+//     const { _id } = req.user;
+
+//     if (!req.file) {
+//       return res.status(400).json({ success: false, msg: "No file uploaded" });
+//     }
+
+//     if (!project_id) {
+//       return res.status(400).json({ success: false, msg: "Project ID is required" });
+//     }
+
+//     const normalizedName = (name || req.file.originalname)?.trim().toLowerCase();
+
+//     const existingCSV = await CsvFile.findOne({
+//       name: normalizedName,
+//       uploadedBy: _id,
+//     });
+
+//     if (existingCSV) {
+//       return res.status(400).json({ success: false, message: 'CSV with this name already exists for this user' });
+//     }
+
+//     // Create CSV file record
+//     const CSVFile = await CsvFile.create({
+//       name: normalizedName,
+//       file: `/uploads/csvs/${req.file.filename}`,
+//       csvType,
+//       uploadedBy: _id,
+//       project_id, // Add project reference
+//     });
+
+//     // Parse CSV file
+//     const filePath = path.join('uploads', 'csvs', req.file.filename);
+//     const parsedData = [];
+//     let headers = [];
+
+//     // Read and parse CSV
+//     await new Promise((resolve, reject) => {
+//       fs.createReadStream(filePath)
+//         .pipe(csv())
+//         .on('headers', (headerList) => {
+//           headers = headerList;
+//         })
+//         .on('data', (row) => {
+//           parsedData.push(row);
+//         })
+//         .on('end', resolve)
+//         .on('error', reject);
+//     });
+
+//     // Save parsed data to database - Use CsvData model, not CsvDataSchema
+//     const csvData = await CsvData.create({
+//       csvFile: CSVFile._id,
+//       project_id,
+//       csvType,
+//       uploadedBy: _id,
+//       data: parsedData,
+//       headers,
+//       rowCount: parsedData.length,
+//     });
+
+//     res.status(200).json({
+//       success: true,
+//       message: "CSV uploaded and parsed successfully",
+//       CSVFile,
+//       csvData: {
+//         id: csvData._id,
+//         rowCount: csvData.rowCount,
+//         headers: csvData.headers,
+//       },
+//     });
+
+//   } catch (error) {
+//     console.error("Upload CSV Error:", error);
+//     res.status(500).json({ success: false, msg: "Server error" });
+//   }
+// };
 export const uploadProjectCSV = async (req, res) => {
   try {
-    const { csvType, name, project_id } = req.body;
-
+    const { csvType, project_id } = req.body;
     const { _id } = req.user;
 
     if (!req.file) {
@@ -22,46 +101,51 @@ export const uploadProjectCSV = async (req, res) => {
       return res.status(400).json({ success: false, msg: "Project ID is required" });
     }
 
-    const normalizedName = (name || req.file.originalname)?.trim().toLowerCase();
+    // CSV ka naam file ke original name se hi hoga
+    const normalizedName = req.file.originalname.trim().toLowerCase();
 
+    // Check if CSV already exists for this project + type + user
     const existingCSV = await CsvFile.findOne({
-      name: normalizedName,
+      project_id,
+      csvType,
       uploadedBy: _id,
     });
 
     if (existingCSV) {
-      return res.status(400).json({ success: false, message: 'CSV with this name already exists for this user' });
+      // Delete old file from disk
+      const oldPath = path.join('uploads', existingCSV.file);
+      if (fs.existsSync(oldPath)) {
+        fs.unlinkSync(oldPath);
+      }
+      // Remove old record
+      await CsvFile.deleteOne({ _id: existingCSV._id });
+      await CsvData.deleteMany({ csvFile: existingCSV._id }); // delete old parsed data
     }
 
-    // Create CSV file record
+    // Create new CSV record
     const CSVFile = await CsvFile.create({
-      name: normalizedName,
+      name: normalizedName, // 🔥 name will be file ka naam
       file: `/uploads/csvs/${req.file.filename}`,
       csvType,
       uploadedBy: _id,
-      project_id, // Add project reference
+      project_id,
     });
 
-    // Parse CSV file
+    // Parse CSV
     const filePath = path.join('uploads', 'csvs', req.file.filename);
     const parsedData = [];
     let headers = [];
 
-    // Read and parse CSV
     await new Promise((resolve, reject) => {
       fs.createReadStream(filePath)
         .pipe(csv())
-        .on('headers', (headerList) => {
-          headers = headerList;
-        })
-        .on('data', (row) => {
-          parsedData.push(row);
-        })
+        .on('headers', (headerList) => { headers = headerList; })
+        .on('data', (row) => { parsedData.push(row); })
         .on('end', resolve)
         .on('error', reject);
     });
 
-    // Save parsed data to database - Use CsvData model, not CsvDataSchema
+    // Save parsed data
     const csvData = await CsvData.create({
       csvFile: CSVFile._id,
       project_id,
@@ -74,7 +158,9 @@ export const uploadProjectCSV = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "CSV uploaded and parsed successfully",
+      message: existingCSV
+        ? "CSV replaced successfully"
+        : "CSV uploaded successfully",
       CSVFile,
       csvData: {
         id: csvData._id,
