@@ -1,5 +1,4 @@
 import dotenv from 'dotenv';
-
 import express from 'express';
 import cors from 'cors';
 import { connectDB } from './db/db.js';
@@ -28,6 +27,9 @@ app
   credentials: true
 }))
 app
+  .use("/api", res => {
+    res.send("hello");
+  })
   .use("/api/auth", authRouter)
   .use("/api/admin", adminRouter)
   .use("/api/pm", pmRouter)
