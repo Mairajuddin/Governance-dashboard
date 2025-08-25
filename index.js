@@ -22,7 +22,7 @@ app
   origin: [
     'http://localhost:3000',
     'http://localhost:5173',
-    'https://f2d7-2400-adc1-120-cd00-f52d-5b9e-4c97-4e12.ngrok-free.app'
+    'http://http://199.192.25.165',
   ],
   credentials: true
 }))
