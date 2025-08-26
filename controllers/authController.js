@@ -387,13 +387,20 @@ export const getMyProfile = async (req, res) => {
   }
 };
 
+import axios from "axios";
+
 export const getGeoData = async (req, res) => {
   try {
     const { location } = req.query;
     const response = await axios.get(
       `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
         location
-      )}&limit=1`
+      )}&limit=1`,
+      {
+        headers: {
+          "User-Agent": "PMLab/1.0 (hassanalirajput2004@gmail.com)"
+        }
+      }
     );
     res.json(response.data);
   } catch (error) {
