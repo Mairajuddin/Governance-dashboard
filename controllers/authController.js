@@ -17,6 +17,7 @@ import { readSingle, updateSingleUser } from "../db/db.js";
 import PROJECT from "../Models/ProjectSchema.js";
 import axios from "axios";
 const JWT_SECRET = process.env.JWT_SECRET; // Make sure it's in your .env
+
 // -----------------------------REGISTER-------------------------------------
 export const registerUser = async (req, res) => {
   try {
@@ -386,8 +387,6 @@ export const getMyProfile = async (req, res) => {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
-import axios from "axios";
 
 export const getGeoData = async (req, res) => {
   try {

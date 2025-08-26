@@ -3,6 +3,9 @@ import multer from "multer";
 import { addProject, addUser, allowManagerToAddProject, deleteProject, deleteUser, getAllProjects, getAllUsers, getManagerProjectById, getManagerProjects, getSingleProject, getUserById, updateProject, updateUserRole, updateUserStatus } from "../controllers/adminController.js";
 import { protectRoute } from "../Middlewares/authMiddleware.js";
 import imageUploadMiddleware from "../Middlewares/uploadMiddleware.js";
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
 
 const upload = multer();
 const adminRouter = Router();
