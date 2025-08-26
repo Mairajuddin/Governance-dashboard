@@ -26,10 +26,7 @@ app
   ],
   credentials: true
 }))
-app
-  .use("/api", res => {
-    res.send("hello");
-  })
+
   .use("/api/auth", authRouter)
   .use("/api/admin", adminRouter)
   .use("/api/pm", pmRouter)
