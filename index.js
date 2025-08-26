@@ -22,7 +22,7 @@ app
   origin: [
     'http://localhost:3000',
     'http://localhost:5173',
-    'http://http://199.192.25.165',
+    'http://199.192.25.165',
   ],
   credentials: true
 }))
